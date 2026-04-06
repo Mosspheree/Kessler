@@ -4,9 +4,9 @@
 
 ## What is Kessler Syndrome?
 
-In 1978, NASA scientist Donald Kessler proposed a catastrophic scenario: if the density of objects in low Earth orbit reaches a critical threshold, collisions between objects generate debris that triggers further collisions — a self-sustaining cascade that could render entire orbital shells unusable for centuries.
+In 1978, NASA scientist Donald Kessler proposed a catastrophic scenario: if the density of objects in low Earth orbit reaches a critical threshold, collisions between objects generate debris that triggers further collisions, a self-sustaining cascade that could render entire orbital shells unusable for centuries.
 
-It is not science fiction. The 2009 Iridium-Cosmos collision generated over 2,000 trackable fragments. The 2007 Chinese ASAT test created over 3,000. Today, over 27,000 objects are tracked by the US Space Surveillance Network.
+It is not some science fiction. The 2009 Iridium-Cosmos collision generated over 2,000 trackable fragments. The 2007 Chinese ASAT test created over 3,000. Today, over 27,000 objects are tracked by the US Space Surveillance Network.
 
 Kessler lets you simulate this cascade in real time.
 
