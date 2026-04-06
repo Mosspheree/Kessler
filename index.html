@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Kessler — Space Debris Cascade Simulator</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#000;overflow:hidden;font-family:'Courier New',monospace;color:#fff;}
+    #c{width:100vw;height:100vh;}
+    #ui{position:absolute;top:0;left:0;pointer-events:none;width:100%;height:100%;}
+    #panel{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.85);border:1px solid rgba(0,255,255,0.3);border-radius:10px;padding:18px;width:280px;pointer-events:all;}
+    h1{font-size:15px;color:#0ff;letter-spacing:3px;margin-bottom:2px;}
+    .sub{font-size:10px;color:#555;margin-bottom:12px;letter-spacing:1px;}
+    .stat{font-size:11px;color:#888;margin:4px 0;display:flex;justify-content:space-between;}
+    .stat span{color:#0ff;font-weight:bold;}
+    hr{border:none;border-top:1px solid rgba(0,255,255,0.15);margin:10px 0;}
+    select{width:100%;padding:6px;margin:3px 0;background:#0a0a0a;border:1px solid rgba(0,255,255,0.25);color:#0ff;font-family:'Courier New',monospace;font-size:11px;border-radius:5px;outline:none;}
+    select:hover{border-color:rgba(0,255,255,0.6);}
+    label{font-size:10px;color:#555;display:block;margin-top:8px;letter-spacing:1px;}
+    #go{width:100%;padding:10px;background:linear-gradient(135deg,#800,#c00);border:1px solid #f004;color:#fff;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;border-radius:5px;cursor:pointer;margin-top:10px;transition:all 0.2s;}
+    #go:hover{background:linear-gradient(135deg,#c00,#f00);box-shadow:0 0 15px #f005;}
+    #go:disabled{background:#1a1a1a;color:#444;border-color:#333;cursor:default;box-shadow:none;}
+    #rst{width:100%;padding:7px;background:transparent;border:1px solid rgba(0,255,255,0.2);color:#0ff;font-family:'Courier New',monospace;font-size:10px;border-radius:5px;cursor:pointer;margin-top:6px;letter-spacing:1px;transition:all 0.2s;}
+    #rst:hover{background:rgba(0,255,255,0.08);border-color:rgba(0,255,255,0.5);}
+    #log{position:absolute;bottom:20px;right:20px;background:rgba(0,0,0,0.88);border:1px solid rgba(255,50,50,0.3);border-radius:10px;padding:14px;width:300px;max-height:200px;overflow-y:auto;font-size:10px;display:none;line-height:1.6;}
+    #log h3{color:#f44;font-size:11px;margin-bottom:6px;letter-spacing:2px;}
+    #legend{position:absolute;bottom:20px;left:20px;background:rgba(0,0,0,0.85);border:1px solid rgba(0,255,255,0.2);border-radius:10px;padding:14px;font-size:11px;}
+    #legend h4{color:#0ff;font-size:10px;letter-spacing:2px;margin-bottom:8px;}
+    .li{display:flex;align-items:center;gap:8px;color:#888;margin:5px 0;}
+    .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+    #shells{margin-top:10px;border-top:1px solid rgba(0,255,255,0.1);padding-top:8px;}
+    .shell-li{display:flex;align-items:center;gap:8px;color:#666;font-size:10px;margin:3px 0;}
+    .shell-dot{width:20px;height:2px;border-radius:1px;flex-shrink:0;}
+    #load{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#0ff;}
+    #load .title{font-size:24px;letter-spacing:6px;margin-bottom:8px;}
+    #load p{font-size:11px;color:#555;margin-top:4px;letter-spacing:1px;}
+    #tooltip{position:absolute;background:rgba(0,0,0,0.92);border:1px solid rgba(0,255,255,0.4);border-radius:8px;padding:10px;display:none;pointer-events:none;z-index:100;min-width:180px;}
+    #instructions{position:absolute;top:50%;right:20px;transform:translateY(-50%);background:rgba(0,0,0,0.7);border:1px solid rgba(0,255,255,0.15);border-radius:10px;padding:16px;width:220px;font-size:10px;color:#666;line-height:1.8;display:none;}
+    #instructions h4{color:#0ff;margin-bottom:8px;letter-spacing:1px;}
+    .step{color:#888;margin:4px 0;}
+    .step span{color:#0ff;}
+    #warning{background:rgba(255,100,0,0.1);border:1px solid rgba(255,100,0,0.3);border-radius:6px;padding:8px;margin-top:10px;font-size:10px;color:#fa8;line-height:1.5;display:none;}
+  </style>
+</head>
+<body>
+  <div id="c"></div>
+  <div id="ui">
+    <div id="panel">
+      <h1>KESSLER</h1>
+      <p class="sub">SPACE DEBRIS CASCADE SIMULATOR</p>
+      <hr/>
+      <div class="stat">Active satellites <span id="s-total">—</span></div>
+      <div class="stat">Debris fragments <span id="s-debris">0</span></div>
+      <div class="stat">Cascade events <span id="s-cas">0</span></div>
+      <div class="stat">Simulation time <span id="s-time">0s</span></div>
+      <hr/>
+      <label>▸ SELECT OBJECT A (initiator)</label>
+      <select id="oa"></select>
+      <label>▸ SELECT OBJECT B (target)</label>
+      <select id="ob"></select>
+      <div id="warning">⚠ Simulating a real collision event. Debris will propagate across orbital shells and may trigger secondary impacts.</div>
+      <button id="go" disabled>⚠ TRIGGER COLLISION</button>
+      <button id="rst">↺ RESET SIMULATION</button>
+    </div>
+
+    <div id="legend">
+      <h4>OBJECT TYPES</h4>
+      <div class="li"><div class="dot" style="background:#44aaff"></div>Active satellite</div>
+      <div class="li"><div class="dot" style="background:#ffaa44"></div>Rocket body</div>
+      <div class="li"><div class="dot" style="background:#ff4444"></div>Known debris</div>
+      <div class="li"><div class="dot" style="background:#ff00ff"></div>Cascade fragment</div>
+      <div id="shells">
+        <div class="shell-li"><div class="shell-dot" style="background:#00ffff"></div>LEO (&lt;2,000 km)</div>
+        <div class="shell-li"><div class="shell-dot" style="background:#ffaa00"></div>MEO (2,000–35,000 km)</div>
+        <div class="shell-li"><div class="shell-dot" style="background:#ff44ff"></div>GEO (~35,786 km)</div>
+      </div>
+    </div>
+
+    <div id="instructions">
+      <h4>HOW TO USE</h4>
+      <div class="step"><span>1.</span> Select two objects from the dropdowns</div>
+      <div class="step"><span>2.</span> Hover over objects to see details</div>
+      <div class="step"><span>3.</span> Click TRIGGER COLLISION</div>
+      <div class="step"><span>4.</span> Watch the cascade unfold</div>
+      <div class="step"><span>5.</span> Drag to rotate · Scroll to zoom</div>
+    </div>
+
+    <div id="log"><h3>▶ CASCADE LOG</h3><div id="entries"></div></div>
+    <div id="tooltip"></div>
+
+    <div id="load">
+      <div class="title">KESSLER</div>
+      <p id="lt">Initializing orbital mechanics...</p>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
