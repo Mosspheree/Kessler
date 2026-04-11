@@ -1,15 +1,26 @@
 {
-  "name": "orbitwatch",
-  "version": "0.0.0",
+  "name": "kessler",
+  "version": "1.0.0",
+  "description": "Real-time 3D space debris cascade simulator — visualize Kessler Syndrome using live orbital data",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.{js,css}\" index.html",
+    "format:check": "prettier --check \"src/**/*.{js,css}\" index.html",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
-    "vite": "^8.0.1"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.2.0",
+    "prettier": "^3.8.2",
+    "vite": "^8.0.1",
+    "vitest": "^4.1.4"
   },
   "dependencies": {
     "satellite.js": "^7.0.0",
