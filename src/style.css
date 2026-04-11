@@ -1,0 +1,315 @@
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #000;
+  overflow: hidden;
+  font-family: 'Courier New', monospace;
+  color: #fff;
+}
+
+/* ── Canvas ───────────────────────────────────────────────────────────────── */
+#canvas-container {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ── UI overlay ───────────────────────────────────────────────────────────── */
+#ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Control panel ────────────────────────────────────────────────────────── */
+#panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 10px;
+  padding: 18px;
+  width: 280px;
+  pointer-events: all;
+}
+
+#panel h1 {
+  font-size: 15px;
+  color: #0ff;
+  letter-spacing: 3px;
+  margin-bottom: 2px;
+}
+
+.sub {
+  font-size: 10px;
+  color: #555;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+/* ── Stats ────────────────────────────────────────────────────────────────── */
+.stat {
+  font-size: 11px;
+  color: #888;
+  margin: 4px 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.stat span {
+  color: #0ff;
+  font-weight: bold;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid rgba(0, 255, 255, 0.15);
+  margin: 10px 0;
+}
+
+/* ── Form controls ────────────────────────────────────────────────────────── */
+label {
+  font-size: 10px;
+  color: #555;
+  display: block;
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+
+select {
+  width: 100%;
+  padding: 6px;
+  margin: 3px 0;
+  background: #0a0a0a;
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  color: #0ff;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  border-radius: 5px;
+  outline: none;
+}
+
+select:hover {
+  border-color: rgba(0, 255, 255, 0.6);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+#trigger-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #800, #c00);
+  border: 1px solid rgba(255, 0, 0, 0.25);
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+
+#trigger-btn:hover {
+  background: linear-gradient(135deg, #c00, #f00);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+}
+
+#trigger-btn:disabled {
+  background: #1a1a1a;
+  color: #444;
+  border-color: #333;
+  cursor: default;
+  box-shadow: none;
+}
+
+#reset-btn {
+  width: 100%;
+  padding: 7px;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  color: #0ff;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 6px;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+
+#reset-btn:hover {
+  background: rgba(0, 255, 255, 0.08);
+  border-color: rgba(0, 255, 255, 0.5);
+}
+
+/* ── Warning box ──────────────────────────────────────────────────────────── */
+#warning {
+  background: rgba(255, 100, 0, 0.1);
+  border: 1px solid rgba(255, 100, 0, 0.3);
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: #fa8;
+  line-height: 1.5;
+  display: none;
+}
+
+/* ── Cascade log ──────────────────────────────────────────────────────────── */
+#cascade-log {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.88);
+  border: 1px solid rgba(255, 50, 50, 0.3);
+  border-radius: 10px;
+  padding: 14px;
+  width: 300px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 10px;
+  display: none;
+  line-height: 1.6;
+  pointer-events: all;
+}
+
+#cascade-log h3 {
+  color: #f44;
+  font-size: 11px;
+  margin-bottom: 6px;
+  letter-spacing: 2px;
+}
+
+/* ── Legend ────────────────────────────────────────────────────────────────── */
+#legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 11px;
+  pointer-events: all;
+}
+
+#legend h4 {
+  color: #0ff;
+  font-size: 10px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+  margin: 5px 0;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+#shells {
+  margin-top: 10px;
+  border-top: 1px solid rgba(0, 255, 255, 0.1);
+  padding-top: 8px;
+}
+
+.shell-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 10px;
+  margin: 3px 0;
+}
+
+.shell-line {
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+/* ── Loading screen ───────────────────────────────────────────────────────── */
+#loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #0ff;
+}
+
+#loading .title {
+  font-size: 24px;
+  letter-spacing: 6px;
+  margin-bottom: 8px;
+}
+
+#loading p {
+  font-size: 11px;
+  color: #555;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+/* ── Tooltip ──────────────────────────────────────────────────────────────── */
+#tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  border-radius: 8px;
+  padding: 10px;
+  display: none;
+  pointer-events: none;
+  z-index: 100;
+  min-width: 180px;
+}
+
+/* ── Instructions ─────────────────────────────────────────────────────────── */
+#instructions {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(0, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 16px;
+  width: 220px;
+  font-size: 10px;
+  color: #666;
+  line-height: 1.8;
+  display: none;
+  pointer-events: all;
+}
+
+#instructions h4 {
+  color: #0ff;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.step {
+  color: #888;
+  margin: 4px 0;
+}
+
+.step span {
+  color: #0ff;
+}
