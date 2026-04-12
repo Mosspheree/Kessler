@@ -230,7 +230,7 @@ export function createSatelliteMesh(type, hexColor) {
 /**
  * createDot kept for debris spawned mid-simulation.
  */
-export function createDot(hexColor, size = 0.07, coreFraction = 0.18) {
+export function createDot(hexColor, _size = 0.07, _coreFraction = 0.18) {
   const type = hexColor === 0xff00ff ? 'cascade' : 'debris';
   return createSatelliteMesh(type, hexColor);
 }
