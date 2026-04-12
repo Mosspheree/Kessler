@@ -28,22 +28,16 @@ const EARTH_FRAG = /* glsl */`
     vec3  N     = normalize(vNormal);
     float NdotL = dot(N, normalize(sunDirection));
     float blend = smoothstep(-0.2, 0.25, NdotL);
-
     vec3 day   = texture2D(tDay,   vUv).rgb;
     vec3 night = texture2D(tNight, vUv).rgb * 2.5;
     vec3 col   = mix(night, day, blend);
-
-    // Specular shimmer on ocean
     float spec    = texture2D(tSpecular, vUv).r;
     vec3  viewDir = normalize(cameraPosition - vWorldPos);
     vec3  halfDir = normalize(normalize(sunDirection) + viewDir);
     float shine   = pow(max(dot(N, halfDir), 0.0), 80.0) * spec * blend;
     col += vec3(0.8, 0.9, 1.0) * shine * 0.5;
-
-    // Edge darkening
     float rim = 1.0 - max(dot(N, viewDir), 0.0);
     col *= 1.0 - rim * rim * 0.4;
-
     gl_FragColor = vec4(col, 1.0);
   }
 `;
@@ -72,18 +66,64 @@ const ATMOS_FRAG = /* glsl */`
   }
 `;
 
-// ── Texture URLs (Three.js CDN — public domain NASA imagery) ─────────────────
 const TEX_DAY      = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg';
 const TEX_NIGHT    = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_lights_2048.png';
 const TEX_SPECULAR = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_specular_2048.jpg';
 const TEX_CLOUDS   = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_clouds_1024.png';
 
+// ── Sprite texture factory ────────────────────────────────────────────────────
+
+function makeGlowTexture(hexColor, size = 128, coreFraction = 0.18) {
+  const canvas = document.createElement('canvas');
+  canvas.width  = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  const r = (hexColor >> 16) & 0xff;
+  const g = (hexColor >> 8)  & 0xff;
+  const b =  hexColor        & 0xff;
+
+  const mid  = size / 2;
+  const grad = ctx.createRadialGradient(mid, mid, 0, mid, mid, mid);
+  grad.addColorStop(0,            `rgba(${r},${g},${b},1)`);
+  grad.addColorStop(coreFraction, `rgba(${r},${g},${b},0.85)`);
+  grad.addColorStop(0.45,         `rgba(${r},${g},${b},0.2)`);
+  grad.addColorStop(1,            `rgba(${r},${g},${b},0)`);
+
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(canvas);
+}
+
+// One SpriteMaterial per unique color — shared across all sprites of that color
+const _matCache = new Map();
+
+function getSpriteMaterial(hexColor, coreFraction = 0.18) {
+  const key = `${hexColor}_${coreFraction}`;
+  if (!_matCache.has(key)) {
+    _matCache.set(key, new THREE.SpriteMaterial({
+      map:         makeGlowTexture(hexColor, 128, coreFraction),
+      transparent: true,
+      depthWrite:  false,
+      blending:    THREE.AdditiveBlending,
+    }));
+  }
+  return _matCache.get(key);
+}
+
 /**
- * Create the full Three.js scene: renderer, camera, controls,
- * earth, atmosphere, continents, starfield, orbital shells, and grid.
+ * Create a glowing sprite to represent a satellite or debris fragment.
  *
- * Returns all objects the rest of the app needs to reference.
+ * Replaces the old SphereGeometry mesh — same API: createDot(color, size).
+ * Size is now world-space sprite scale (use 0.05–0.10 for satellites,
+ * 0.03–0.05 for debris).
  */
+export function createDot(hexColor, size = 0.07, coreFraction = 0.18) {
+  const sprite = new THREE.Sprite(getSpriteMaterial(hexColor, coreFraction));
+  sprite.scale.setScalar(size);
+  return sprite;
+}
+
 export function createScene(container) {
   // ── Renderer ─────────────────────────────────────────────────────────────
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -92,25 +132,20 @@ export function createScene(container) {
   container.appendChild(renderer.domElement);
 
   // ── Scene & camera ───────────────────────────────────────────────────────
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(
-    45,
-    window.innerWidth / window.innerHeight,
-    0.001,
-    1000,
-  );
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.001, 1000);
   camera.position.set(0, 0, 3.8);
 
   // ── Controls ─────────────────────────────────────────────────────────────
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.minDistance = 1.3;
-  controls.maxDistance = 10;
+  controls.enableDamping  = true;
+  controls.dampingFactor  = 0.05;
+  controls.minDistance    = 1.3;
+  controls.maxDistance    = 10;
 
   // ── Lighting ─────────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0x112233, 0.8));
-  const sun = new THREE.DirectionalLight(0xfff5e0, 1.8);
+  const sun     = new THREE.DirectionalLight(0xfff5e0, 1.8);
   const SUN_DIR = new THREE.Vector3(5, 3, 5).normalize();
   sun.position.copy(SUN_DIR).multiplyScalar(100);
   scene.add(sun);
@@ -119,8 +154,8 @@ export function createScene(container) {
   const starVerts = [];
   for (let i = 0; i < 10000; i++) {
     const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    const r = 50 + Math.random() * 50;
+    const phi   = Math.acos(2 * Math.random() - 1);
+    const r     = 50 + Math.random() * 50;
     starVerts.push(
       r * Math.sin(phi) * Math.cos(theta),
       r * Math.cos(phi),
@@ -131,8 +166,8 @@ export function createScene(container) {
   starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVerts, 3));
   scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.04 })));
 
-  // ── Earth (shader material: day texture + city lights + ocean specular) ──
-  const loader = new THREE.TextureLoader();
+  // ── Earth ────────────────────────────────────────────────────────────────
+  const loader   = new THREE.TextureLoader();
   const earthMat = new THREE.ShaderMaterial({
     vertexShader:   EARTH_VERT,
     fragmentShader: EARTH_FRAG,
@@ -143,10 +178,7 @@ export function createScene(container) {
       sunDirection: { value: SUN_DIR                   },
     },
   });
-  const earthMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(EARTH_RADIUS, 64, 64),
-    earthMat,
-  );
+  const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(EARTH_RADIUS, 64, 64), earthMat);
   scene.add(earthMesh);
 
   // ── Cloud layer ──────────────────────────────────────────────────────────
@@ -162,25 +194,23 @@ export function createScene(container) {
   );
   scene.add(cloudMesh);
 
-  // ── Atmosphere (GLSL Rayleigh glow) ──────────────────────────────────────
-  scene.add(
-    new THREE.Mesh(
-      new THREE.SphereGeometry(EARTH_RADIUS * 1.06, 64, 64),
-      new THREE.ShaderMaterial({
-        vertexShader:   ATMOS_VERT,
-        fragmentShader: ATMOS_FRAG,
-        uniforms: { sunDirection: { value: SUN_DIR } },
-        transparent: true,
-        depthWrite:  false,
-        side:        THREE.FrontSide,
-        blending:    THREE.AdditiveBlending,
-      }),
-    ),
-  );
+  // ── Atmosphere ───────────────────────────────────────────────────────────
+  scene.add(new THREE.Mesh(
+    new THREE.SphereGeometry(EARTH_RADIUS * 1.06, 64, 64),
+    new THREE.ShaderMaterial({
+      vertexShader:   ATMOS_VERT,
+      fragmentShader: ATMOS_FRAG,
+      uniforms: { sunDirection: { value: SUN_DIR } },
+      transparent: true,
+      depthWrite:  false,
+      side:        THREE.FrontSide,
+      blending:    THREE.AdditiveBlending,
+    }),
+  ));
 
-  // ── Soft glow halo (sprite behind everything) ─────────────────────────────
-  const gc = document.createElement('canvas');
-  gc.width = gc.height = 256;
+  // ── Soft glow halo ───────────────────────────────────────────────────────
+  const gc   = document.createElement('canvas');
+  gc.width   = gc.height = 256;
   const gctx = gc.getContext('2d');
   const grad = gctx.createRadialGradient(128, 128, 40, 128, 128, 128);
   grad.addColorStop(0,   'rgba(70,130,255,0.15)');
@@ -194,7 +224,7 @@ export function createScene(container) {
   glowSprite.scale.set(EARTH_RADIUS * 2.8, EARTH_RADIUS * 2.8, 1);
   scene.add(glowSprite);
 
-  // ── Orbital shells (LEO, MEO, GEO rings) ─────────────────────────────────
+  // ── Orbital shells ───────────────────────────────────────────────────────
   [
     [1.063, 0x00ffff, 0.03],
     [1.35,  0xffaa00, 0.02],
@@ -208,7 +238,7 @@ export function createScene(container) {
     scene.add(ring);
   });
 
-  // ── Lat/lon grid ──────────────────────────────────────────────────────────
+  // ── Lat/lon grid ─────────────────────────────────────────────────────────
   const gridMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.04, transparent: true });
   for (let lat = -80; lat <= 80; lat += 20) {
     const pts = [];
@@ -225,7 +255,7 @@ export function createScene(container) {
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
   }
 
-  // ── Resize handler ────────────────────────────────────────────────────────
+  // ── Resize handler ───────────────────────────────────────────────────────
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -233,14 +263,4 @@ export function createScene(container) {
   });
 
   return { scene, camera, renderer, controls, earthMesh, cloudMesh };
-}
-
-/**
- * Create a small sphere mesh to represent a satellite or debris fragment.
- */
-export function createDot(color, size = 0.006) {
-  return new THREE.Mesh(
-    new THREE.SphereGeometry(size, 6, 6),
-    new THREE.MeshBasicMaterial({ color }),
-  );
 }
