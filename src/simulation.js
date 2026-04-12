@@ -11,26 +11,7 @@ import {
   SURFACE_BOUNCE_FACTOR,
   EARTH_RADIUS,
 } from './constants.js';
-import { createDot } from './scene.js';
-
-// ── Dot sizes (world-space sprite scale) ─────────────────────────────────────
-// Sprites are much larger than the old SphereGeometry meshes were.
-// Satellites: clearly visible, type-differentiated.
-// Debris: smaller but still readable, more numerous.
-const SIZE = {
-  payload: 0.09, // blue  — large, important satellites
-  rocket: 0.08, // orange — rocket bodies
-  debris: 0.045, // red   — existing catalogue debris (smaller)
-  cascade: 0.038, // magenta — freshly spawned collision debris
-};
-
-// coreFraction: how tight the bright core is (smaller = crisper dot)
-const CORE = {
-  payload: 0.2,
-  rocket: 0.2,
-  debris: 0.25,
-  cascade: 0.25,
-};
+import { createDot, createSatelliteMesh } from './scene.js';
 
 // ── Simulation state ─────────────────────────────────────────────────────────
 export const state = {
@@ -50,11 +31,7 @@ export function buildSatellites(tleEntries, scene) {
 
   for (const entry of tleEntries) {
     const type = entry.type || 'payload';
-    const mesh = createDot(
-      COLORS[type] || COLORS.payload,
-      SIZE[type] || SIZE.payload,
-      CORE[type] || CORE.payload,
-    );
+    const mesh = createSatelliteMesh(type, COLORS[type] || COLORS.payload);
     mesh.position.set(entry.scenePos.x, entry.scenePos.y, entry.scenePos.z);
     scene.add(mesh);
 
@@ -80,12 +57,12 @@ export function spawnDebrisCloud(origin, count, isCascade, scene) {
       (Math.random() - 0.5) * 0.003,
       (Math.random() - 0.5) * 0.003,
     );
-    const mesh = createDot(
-      isCascade ? COLORS.cascade : COLORS.debris,
-      isCascade ? SIZE.cascade : SIZE.debris,
-      isCascade ? CORE.cascade : CORE.debris,
-    );
-    const offset = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
+    const mesh = createDot(isCascade ? COLORS.cascade : COLORS.debris);
+    const offset = new THREE.Vector3(
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+    )
       .normalize()
       .multiplyScalar(0.02);
     mesh.position.copy(origin).add(offset);
@@ -107,12 +84,27 @@ export function triggerCollision(indexA, indexB, scene, camera) {
 
   const collisionPos = satA.mesh.position.clone();
 
-  // Flash white
-  satA.mesh.material.color.set(0xffffff);
+  // Move satB to collision point
   satB.mesh.position.copy(collisionPos);
-  satB.mesh.material.color.set(0xffffff);
 
-  // Explosion ring
+  // Particle burst explosion
+  const burstParticles = [];
+  for (let i = 0; i < 30; i++) {
+    const p = new THREE.Mesh(
+      new THREE.TetrahedronGeometry(0.003, 0),
+      new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xff8800 : 0xffff00 }),
+    );
+    p.position.copy(collisionPos);
+    const vel = new THREE.Vector3(
+      (Math.random() - 0.5) * 0.02,
+      (Math.random() - 0.5) * 0.02,
+      (Math.random() - 0.5) * 0.02,
+    );
+    scene.add(p);
+    burstParticles.push({ mesh: p, vel });
+  }
+
+  // Expanding ring
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(0.01, 0.003, 8, 32),
     new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 1 }),
@@ -126,9 +118,18 @@ export function triggerCollision(indexA, indexB, scene, camera) {
     ringScale += 0.3;
     ring.scale.setScalar(ringScale);
     ring.material.opacity -= 0.05;
+
+    burstParticles.forEach((p) => {
+      p.mesh.position.addScaledVector(p.vel, 1);
+      p.vel.multiplyScalar(0.92);
+      p.mesh.rotation.x += 0.2;
+      p.mesh.rotation.y += 0.15;
+    });
+
     if (ring.material.opacity <= 0) {
       clearInterval(expandRing);
       scene.remove(ring);
+      burstParticles.forEach((p) => scene.remove(p.mesh));
     }
   }, 30);
 
@@ -160,6 +161,10 @@ export function updateDebris(dt, scene, onCascade) {
       f.pos.addScaledVector(f.vel, 1);
       f.mesh.position.copy(f.pos);
 
+      // Spin debris shards
+      f.mesh.rotation.x += 0.02;
+      f.mesh.rotation.y += 0.015;
+
       if (f.pos.length() < EARTH_RADIUS * 1.01) {
         f.pos.normalize().multiplyScalar(EARTH_RADIUS * 1.05);
         f.vel.reflect(f.pos.clone().normalize()).multiplyScalar(SURFACE_BOUNCE_FACTOR);
@@ -167,12 +172,26 @@ export function updateDebris(dt, scene, onCascade) {
     });
 
     if (field.age > CASCADE_CHECK_START && field.age < CASCADE_CHECK_END) {
-      const leadFragment = field.frags[0]?.mesh.position || new THREE.Vector3();
       const toRemove = [];
 
       state.satellites.forEach((sat) => {
-        const dist = sat.mesh.position.distanceTo(leadFragment);
-        if (dist < CASCADE_RANGE && Math.random() < CASCADE_PROBABILITY) {
+        // Check all fragments against this satellite
+        let closest = null;
+        let closestDist = Infinity;
+        for (const f of field.frags) {
+          const d = f.pos.distanceTo(sat.mesh.position);
+          if (d < closestDist) {
+            closestDist = d;
+            closest = f;
+          }
+        }
+        if (closest && closestDist < CASCADE_RANGE && Math.random() < CASCADE_PROBABILITY) {
+          // Aim nearby fragments at the satellite visually
+          for (let i = 0; i < Math.min(5, field.frags.length); i++) {
+            const f = field.frags[i];
+            const dir = sat.mesh.position.clone().sub(f.pos).normalize();
+            f.vel.copy(dir.multiplyScalar(0.015));
+          }
           toRemove.push(sat);
         }
       });
