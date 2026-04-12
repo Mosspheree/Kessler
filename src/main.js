@@ -50,7 +50,6 @@ let catalog = TLE_DATA;
 try {
   const res = await fetch('https://celestrak.org/SOCRATES/query.php?CODE=ALL&FORMAT=json');
   if (!res.ok) throw new Error();
-  // fallback if format unexpected
 } catch {
   // silently use embedded TLE_DATA
 }
@@ -74,6 +73,47 @@ buildSatellites(tleEntries, scene);
 populateDropdowns(state.satellites);
 updateStats(getStats());
 showSimulation();
+
+// ── Orbital trails ───────────────────────────────────────────────────────────
+const TRAIL_LENGTH = 120;
+const trailMap = new Map();
+
+function initTrails() {
+  for (const sat of state.satellites) {
+    const points = Array(TRAIL_LENGTH).fill(null).map(() => sat.mesh.position.clone());
+    const geo = new THREE.BufferGeometry().setFromPoints(points);
+    const mat = new THREE.LineBasicMaterial({
+      color: 0x0088aa,
+      transparent: true,
+      opacity: 0.35,
+      depthWrite: false,
+    });
+    const line = new THREE.Line(geo, mat);
+    scene.add(line);
+    trailMap.set(sat, { points, line });
+  }
+}
+
+function updateTrails() {
+  for (const sat of state.satellites) {
+    const trail = trailMap.get(sat);
+    if (!trail) continue;
+    trail.points.push(sat.mesh.position.clone());
+    if (trail.points.length > TRAIL_LENGTH) trail.points.shift();
+    trail.line.geometry.setFromPoints(trail.points);
+    trail.line.geometry.attributes.position.needsUpdate = true;
+  }
+
+  // Clean up trails for destroyed satellites
+  for (const [sat, trail] of trailMap.entries()) {
+    if (!state.satellites.includes(sat)) {
+      scene.remove(trail.line);
+      trailMap.delete(sat);
+    }
+  }
+}
+
+initTrails();
 
 // ── Collision handler ────────────────────────────────────────────────────────
 function handleTrigger() {
@@ -123,6 +163,8 @@ function animate() {
       sat.pos = pos;
     }
   }
+
+  updateTrails();
 
   // Update debris physics
   if (state.running) {
