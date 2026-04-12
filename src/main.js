@@ -25,6 +25,7 @@ const { scene, camera, renderer, controls, earthMesh } = createScene(container);
 
 // ── Raycaster for hover detection ────────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
+raycaster.params.Line = { threshold: 0.01 };
 const mouse = new THREE.Vector2();
 
 window.addEventListener('mousemove', (e) => {
@@ -33,10 +34,20 @@ window.addEventListener('mousemove', (e) => {
   moveTooltip(e.clientX, e.clientY);
 
   raycaster.setFromCamera(mouse, camera);
-  const meshes = state.satellites.map((s) => s.mesh);
-  const hits = raycaster.intersectObjects(meshes);
+
+  // Collect all child meshes from satellite groups and map back to satellite
+  const meshToSat = new Map();
+  for (const sat of state.satellites) {
+    sat.mesh.traverse((child) => {
+      if (child.isMesh || child.isSprite) meshToSat.set(child, sat);
+    });
+  }
+
+  const allChildren = [...meshToSat.keys()];
+  const hits = raycaster.intersectObjects(allChildren, false);
+
   if (hits.length > 0) {
-    const sat = state.satellites.find((s) => s.mesh === hits[0].object);
+    const sat = meshToSat.get(hits[0].object);
     if (sat) showTooltip(sat);
   } else {
     hideTooltip();
@@ -104,7 +115,6 @@ function updateTrails() {
     trail.line.geometry.attributes.position.needsUpdate = true;
   }
 
-  // Clean up trails for destroyed satellites
   for (const [sat, trail] of trailMap.entries()) {
     if (!state.satellites.includes(sat)) {
       scene.remove(trail.line);
@@ -162,11 +172,12 @@ function animate() {
       sat.mesh.position.set(xyz.x, xyz.y, xyz.z);
       sat.pos = pos;
     }
+    // Slowly rotate satellite models
+    sat.mesh.rotation.y += 0.003;
   }
 
   updateTrails();
 
-  // Update debris physics
   if (state.running) {
     updateDebris(dt, scene, (satName) => {
       addLog(`\uD83D\uDD34 CASCADE: fragment struck ${satName}`, true);
