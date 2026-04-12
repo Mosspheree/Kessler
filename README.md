@@ -1,5 +1,6 @@
 # Kessler
-<img width="1900" alt="Kessler Simulation Screenshot" src="https://raw.githubusercontent.com/Mosspheree/Kessler/main/Screenshot%20from%202026-04-12%2016-38-44.png" />
+
+![Kessler Simulation Demo](simulation-demo.png)
 
 > Real-time 3D space debris cascade simulator — visualize Kessler Syndrome using live orbital data.
 
