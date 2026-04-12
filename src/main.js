@@ -56,16 +56,15 @@ window.addEventListener('mousemove', (e) => {
 
 // ── Build satellites from embedded TLE data ──────────────────────────────────
 setLoadingText('Fetching live orbital data...');
-
 let catalog = TLE_DATA;
 try {
+  // eslint-disable-next-line no-undef
   const res = await fetch('https://celestrak.org/SOCRATES/query.php?CODE=ALL&FORMAT=json');
   if (!res.ok) throw new Error();
 } catch {
   // silently use embedded TLE_DATA
 }
 setLoadingText('Building orbital model...');
-
 const now = new Date();
 const tleEntries = [];
 for (const [name, l1, l2, type, desc] of catalog) {
@@ -79,7 +78,6 @@ for (const [name, l1, l2, type, desc] of catalog) {
     // Skip malformed TLEs
   }
 }
-
 buildSatellites(tleEntries, scene);
 populateDropdowns(state.satellites);
 updateStats(getStats());
