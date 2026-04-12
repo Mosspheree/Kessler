@@ -75,60 +75,170 @@ const TEX_SPECULAR =
 const TEX_CLOUDS =
   'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_clouds_1024.png';
 
-// ── Sprite texture factory ────────────────────────────────────────────────────
+// ── Satellite model factory ───────────────────────────────────────────────────
 
-function makeGlowTexture(hexColor, size = 128, coreFraction = 0.18) {
+function makeGlow(hexColor, scale = 0.06) {
   const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = canvas.height = 64;
   const ctx = canvas.getContext('2d');
-
   const r = (hexColor >> 16) & 0xff;
   const g = (hexColor >> 8) & 0xff;
   const b = hexColor & 0xff;
-
-  const mid = size / 2;
-  const grad = ctx.createRadialGradient(mid, mid, 0, mid, mid, mid);
-  grad.addColorStop(0, `rgba(${r},${g},${b},1)`);
-  grad.addColorStop(coreFraction, `rgba(${r},${g},${b},0.85)`);
-  grad.addColorStop(0.45, `rgba(${r},${g},${b},0.2)`);
+  const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, `rgba(${r},${g},${b},0.8)`);
+  grad.addColorStop(0.3, `rgba(${r},${g},${b},0.3)`);
   grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, size, size);
-  return new THREE.CanvasTexture(canvas);
-}
-
-// One SpriteMaterial per unique color — shared across all sprites of that color
-const _matCache = new Map();
-
-function getSpriteMaterial(hexColor, coreFraction = 0.18) {
-  const key = `${hexColor}_${coreFraction}`;
-  if (!_matCache.has(key)) {
-    _matCache.set(
-      key,
-      new THREE.SpriteMaterial({
-        map: makeGlowTexture(hexColor, 128, coreFraction),
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }),
-    );
-  }
-  return _matCache.get(key);
+  ctx.fillRect(0, 0, 64, 64);
+  const glow = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(canvas),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }),
+  );
+  glow.scale.setScalar(scale);
+  return glow;
 }
 
 /**
- * Create a glowing sprite to represent a satellite or debris fragment.
- *
- * Replaces the old SphereGeometry mesh — same API: createDot(color, size).
- * Size is now world-space sprite scale (use 0.05–0.10 for satellites,
- * 0.03–0.05 for debris).
+ * Create a realistic satellite/debris mesh based on type.
+ */
+export function createSatelliteMesh(type, hexColor) {
+  const group = new THREE.Group();
+  const color = new THREE.Color(hexColor);
+
+  if (type === 'payload') {
+    // Main bus body
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(0.012, 0.006, 0.006),
+      new THREE.MeshPhongMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: 0.4,
+        shininess: 80,
+      }),
+    );
+    group.add(body);
+
+    // Solar panels
+    const panelMat = new THREE.MeshPhongMaterial({
+      color: 0x1144cc,
+      emissive: 0x002266,
+      emissiveIntensity: 0.6,
+      shininess: 120,
+      side: THREE.DoubleSide,
+    });
+    [-1, 1].forEach((side) => {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.001, 0.009), panelMat);
+      panel.position.x = side * 0.016;
+      group.add(panel);
+
+      // Panel frame
+      const frame = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(0.02, 0.001, 0.009)),
+        new THREE.LineBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.6 }),
+      );
+      frame.position.x = side * 0.016;
+      group.add(frame);
+    });
+
+    // Antenna dish
+    const ant = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0002, 0.0002, 0.01, 4),
+      new THREE.MeshBasicMaterial({ color: 0xcccccc }),
+    );
+    ant.position.y = 0.008;
+    group.add(ant);
+
+    // Dish top
+    const dish = new THREE.Mesh(
+      new THREE.SphereGeometry(0.002, 6, 4, 0, Math.PI),
+      new THREE.MeshPhongMaterial({ color: 0xaaaaaa, side: THREE.DoubleSide }),
+    );
+    dish.position.y = 0.013;
+    group.add(dish);
+
+    group.add(makeGlow(hexColor, 0.08));
+
+  } else if (type === 'rocket') {
+    // Cylinder body
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.003, 0.0035, 0.022, 10),
+      new THREE.MeshPhongMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: 0.2,
+        shininess: 60,
+      }),
+    );
+    group.add(body);
+
+    // Nozzle cone
+    const nozzle = new THREE.Mesh(
+      new THREE.ConeGeometry(0.004, 0.006, 8),
+      new THREE.MeshPhongMaterial({ color: 0x444444, shininess: 30 }),
+    );
+    nozzle.position.y = -0.014;
+    nozzle.rotation.z = Math.PI;
+    group.add(nozzle);
+
+    // Nose cone
+    const nose = new THREE.Mesh(
+      new THREE.ConeGeometry(0.003, 0.008, 8),
+      new THREE.MeshPhongMaterial({ color: 0x888888, shininess: 80 }),
+    );
+    nose.position.y = 0.015;
+    group.add(nose);
+
+    group.add(makeGlow(hexColor, 0.07));
+
+  } else {
+    // Debris / cascade — jagged irregular shard
+    const size = type === 'cascade' ? 0.005 : 0.007;
+    const geo = new THREE.TetrahedronGeometry(size, 0);
+
+    // Randomize vertices slightly for irregular look
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      pos.setXYZ(
+        i,
+        pos.getX(i) * (0.7 + Math.random() * 0.6),
+        pos.getY(i) * (0.7 + Math.random() * 0.6),
+        pos.getZ(i) * (0.7 + Math.random() * 0.6),
+      );
+    }
+    geo.computeVertexNormals();
+
+    const shard = new THREE.Mesh(
+      geo,
+      new THREE.MeshPhongMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: 0.5,
+        shininess: 40,
+        flatShading: true,
+      }),
+    );
+    shard.rotation.set(
+      Math.random() * Math.PI,
+      Math.random() * Math.PI,
+      Math.random() * Math.PI,
+    );
+    group.add(shard);
+    group.add(makeGlow(hexColor, type === 'cascade' ? 0.04 : 0.05));
+  }
+
+  return group;
+}
+
+/**
+ * createDot kept for debris spawned mid-simulation.
  */
 export function createDot(hexColor, size = 0.07, coreFraction = 0.18) {
-  const sprite = new THREE.Sprite(getSpriteMaterial(hexColor, coreFraction));
-  sprite.scale.setScalar(size);
-  return sprite;
+  const type = hexColor === 0xff00ff ? 'cascade' : 'debris';
+  return createSatelliteMesh(type, hexColor);
 }
 
 export function createScene(container) {
@@ -156,11 +266,16 @@ export function createScene(container) {
   controls.maxDistance = 10;
 
   // ── Lighting ─────────────────────────────────────────────────────────────
-  scene.add(new THREE.AmbientLight(0x112233, 0.8));
-  const sun = new THREE.DirectionalLight(0xfff5e0, 1.8);
+  scene.add(new THREE.AmbientLight(0x223344, 1.0));
+  const sun = new THREE.DirectionalLight(0xfff5e0, 2.0);
   const SUN_DIR = new THREE.Vector3(5, 3, 5).normalize();
   sun.position.copy(SUN_DIR).multiplyScalar(100);
   scene.add(sun);
+
+  // Soft fill light from opposite side
+  const fill = new THREE.DirectionalLight(0x334466, 0.4);
+  fill.position.set(-5, -3, -5);
+  scene.add(fill);
 
   // ── Stars ────────────────────────────────────────────────────────────────
   const starVerts = [];
