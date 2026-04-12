@@ -7,8 +7,8 @@ export const DEBRIS_PER_COLLISION = 150;
 export const CASCADE_DEBRIS_COUNT = 60;
 export const CASCADE_CHECK_START = 3;
 export const CASCADE_CHECK_END = 120;
-export const CASCADE_RANGE = 0.8;       // was 1.5 — less aggressive spread
-export const CASCADE_PROBABILITY = 0.6; // was 0.9 — not every hit destroys
+export const CASCADE_RANGE = 1.5;
+export const CASCADE_PROBABILITY = 0.9;
 export const GRAVITY_PULL = 0.000003;
 export const SURFACE_BOUNCE_FACTOR = 0.4;
 
