@@ -5,10 +5,10 @@ export const SCALE = 1 / 6371; // km -> scene units
 // ── Simulation tuning ────────────────────────────────────────────────────────
 export const DEBRIS_PER_COLLISION = 150;
 export const CASCADE_DEBRIS_COUNT = 60;
-export const CASCADE_CHECK_START = 3; // seconds after collision
-export const CASCADE_CHECK_END = 3.1;
-export const CASCADE_RANGE = 0.12; // scene units
-export const CASCADE_PROBABILITY = 0.35;
+export const CASCADE_CHECK_START = 3;
+export const CASCADE_CHECK_END = 30;    // was 3.1 — give it actual time
+export const CASCADE_RANGE = 0.4;       // was 0.12 — wider detection radius
+export const CASCADE_PROBABILITY = 0.6; // was 0.35 — more likely to trigger
 export const GRAVITY_PULL = 0.000003;
 export const SURFACE_BOUNCE_FACTOR = 0.4;
 
