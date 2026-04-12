@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { getSimSpeed } from './ui.js';
 import './style.css';
 import { TLE_DATA } from './constants.js';
 import { llaToXYZ, propagateSatellite, parseTLE } from './orbital.js';
