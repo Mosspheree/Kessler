@@ -168,15 +168,21 @@ export function updateDebris(dt, scene, onCascade) {
 
     if (field.age > CASCADE_CHECK_START && field.age < CASCADE_CHECK_END) {
       const leadFragment = field.frags[0]?.mesh.position || new THREE.Vector3();
+      const toRemove = [];
+
       state.satellites.forEach((sat) => {
         const dist = sat.mesh.position.distanceTo(leadFragment);
         if (dist < CASCADE_RANGE && Math.random() < CASCADE_PROBABILITY) {
-          spawnDebrisCloud(sat.mesh.position.clone(), CASCADE_DEBRIS_COUNT, true, scene);
-          scene.remove(sat.mesh);
-          state.satellites = state.satellites.filter((s) => s !== sat);
-          state.cascadeCount++;
-          if (onCascade) onCascade(sat.name);
+          toRemove.push(sat);
         }
+      });
+
+      toRemove.forEach((sat) => {
+        spawnDebrisCloud(sat.mesh.position.clone(), CASCADE_DEBRIS_COUNT, true, scene);
+        scene.remove(sat.mesh);
+        state.satellites = state.satellites.filter((s) => s !== sat);
+        state.cascadeCount++;
+        if (onCascade) onCascade(sat.name);
       });
     }
   });
