@@ -4,7 +4,7 @@ import { EARTH_RADIUS } from './constants.js';
 
 // ── GLSL: Earth day/night shader ─────────────────────────────────────────────
 
-const EARTH_VERT = /* glsl */`
+const EARTH_VERT = /* glsl */ `
   varying vec2 vUv;
   varying vec3 vNormal;
   varying vec3 vWorldPos;
@@ -16,7 +16,7 @@ const EARTH_VERT = /* glsl */`
   }
 `;
 
-const EARTH_FRAG = /* glsl */`
+const EARTH_FRAG = /* glsl */ `
   uniform sampler2D tDay;
   uniform sampler2D tNight;
   uniform sampler2D tSpecular;
@@ -42,7 +42,7 @@ const EARTH_FRAG = /* glsl */`
   }
 `;
 
-const ATMOS_VERT = /* glsl */`
+const ATMOS_VERT = /* glsl */ `
   varying vec3 vNormal;
   varying vec3 vWorldPos;
   void main() {
@@ -52,7 +52,7 @@ const ATMOS_VERT = /* glsl */`
   }
 `;
 
-const ATMOS_FRAG = /* glsl */`
+const ATMOS_FRAG = /* glsl */ `
   uniform vec3 sunDirection;
   varying vec3 vNormal;
   varying vec3 vWorldPos;
@@ -66,29 +66,33 @@ const ATMOS_FRAG = /* glsl */`
   }
 `;
 
-const TEX_DAY      = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg';
-const TEX_NIGHT    = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_lights_2048.png';
-const TEX_SPECULAR = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_specular_2048.jpg';
-const TEX_CLOUDS   = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_clouds_1024.png';
+const TEX_DAY =
+  'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg';
+const TEX_NIGHT =
+  'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_lights_2048.png';
+const TEX_SPECULAR =
+  'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_specular_2048.jpg';
+const TEX_CLOUDS =
+  'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_clouds_1024.png';
 
 // ── Sprite texture factory ────────────────────────────────────────────────────
 
 function makeGlowTexture(hexColor, size = 128, coreFraction = 0.18) {
   const canvas = document.createElement('canvas');
-  canvas.width  = size;
+  canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
 
   const r = (hexColor >> 16) & 0xff;
-  const g = (hexColor >> 8)  & 0xff;
-  const b =  hexColor        & 0xff;
+  const g = (hexColor >> 8) & 0xff;
+  const b = hexColor & 0xff;
 
-  const mid  = size / 2;
+  const mid = size / 2;
   const grad = ctx.createRadialGradient(mid, mid, 0, mid, mid, mid);
-  grad.addColorStop(0,            `rgba(${r},${g},${b},1)`);
+  grad.addColorStop(0, `rgba(${r},${g},${b},1)`);
   grad.addColorStop(coreFraction, `rgba(${r},${g},${b},0.85)`);
-  grad.addColorStop(0.45,         `rgba(${r},${g},${b},0.2)`);
-  grad.addColorStop(1,            `rgba(${r},${g},${b},0)`);
+  grad.addColorStop(0.45, `rgba(${r},${g},${b},0.2)`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
 
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
@@ -101,12 +105,15 @@ const _matCache = new Map();
 function getSpriteMaterial(hexColor, coreFraction = 0.18) {
   const key = `${hexColor}_${coreFraction}`;
   if (!_matCache.has(key)) {
-    _matCache.set(key, new THREE.SpriteMaterial({
-      map:         makeGlowTexture(hexColor, 128, coreFraction),
-      transparent: true,
-      depthWrite:  false,
-      blending:    THREE.AdditiveBlending,
-    }));
+    _matCache.set(
+      key,
+      new THREE.SpriteMaterial({
+        map: makeGlowTexture(hexColor, 128, coreFraction),
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
   }
   return _matCache.get(key);
 }
@@ -132,20 +139,25 @@ export function createScene(container) {
   container.appendChild(renderer.domElement);
 
   // ── Scene & camera ───────────────────────────────────────────────────────
-  const scene  = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.001, 1000);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(
+    45,
+    window.innerWidth / window.innerHeight,
+    0.001,
+    1000,
+  );
   camera.position.set(0, 0, 3.8);
 
   // ── Controls ─────────────────────────────────────────────────────────────
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping  = true;
-  controls.dampingFactor  = 0.05;
-  controls.minDistance    = 1.3;
-  controls.maxDistance    = 10;
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.minDistance = 1.3;
+  controls.maxDistance = 10;
 
   // ── Lighting ─────────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0x112233, 0.8));
-  const sun     = new THREE.DirectionalLight(0xfff5e0, 1.8);
+  const sun = new THREE.DirectionalLight(0xfff5e0, 1.8);
   const SUN_DIR = new THREE.Vector3(5, 3, 5).normalize();
   sun.position.copy(SUN_DIR).multiplyScalar(100);
   scene.add(sun);
@@ -154,8 +166,8 @@ export function createScene(container) {
   const starVerts = [];
   for (let i = 0; i < 10000; i++) {
     const theta = Math.random() * Math.PI * 2;
-    const phi   = Math.acos(2 * Math.random() - 1);
-    const r     = 50 + Math.random() * 50;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const r = 50 + Math.random() * 50;
     starVerts.push(
       r * Math.sin(phi) * Math.cos(theta),
       r * Math.cos(phi),
@@ -167,15 +179,15 @@ export function createScene(container) {
   scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.04 })));
 
   // ── Earth ────────────────────────────────────────────────────────────────
-  const loader   = new THREE.TextureLoader();
+  const loader = new THREE.TextureLoader();
   const earthMat = new THREE.ShaderMaterial({
-    vertexShader:   EARTH_VERT,
+    vertexShader: EARTH_VERT,
     fragmentShader: EARTH_FRAG,
     uniforms: {
-      tDay:         { value: loader.load(TEX_DAY)      },
-      tNight:       { value: loader.load(TEX_NIGHT)    },
-      tSpecular:    { value: loader.load(TEX_SPECULAR) },
-      sunDirection: { value: SUN_DIR                   },
+      tDay: { value: loader.load(TEX_DAY) },
+      tNight: { value: loader.load(TEX_NIGHT) },
+      tSpecular: { value: loader.load(TEX_SPECULAR) },
+      sunDirection: { value: SUN_DIR },
     },
   });
   const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(EARTH_RADIUS, 64, 64), earthMat);
@@ -185,41 +197,48 @@ export function createScene(container) {
   const cloudMesh = new THREE.Mesh(
     new THREE.SphereGeometry(EARTH_RADIUS * 1.008, 64, 64),
     new THREE.MeshPhongMaterial({
-      map:         loader.load(TEX_CLOUDS),
+      map: loader.load(TEX_CLOUDS),
       transparent: true,
-      opacity:     0.35,
-      depthWrite:  false,
-      blending:    THREE.AdditiveBlending,
+      opacity: 0.35,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
     }),
   );
   scene.add(cloudMesh);
 
   // ── Atmosphere ───────────────────────────────────────────────────────────
-  scene.add(new THREE.Mesh(
-    new THREE.SphereGeometry(EARTH_RADIUS * 1.06, 64, 64),
-    new THREE.ShaderMaterial({
-      vertexShader:   ATMOS_VERT,
-      fragmentShader: ATMOS_FRAG,
-      uniforms: { sunDirection: { value: SUN_DIR } },
-      transparent: true,
-      depthWrite:  false,
-      side:        THREE.FrontSide,
-      blending:    THREE.AdditiveBlending,
-    }),
-  ));
+  scene.add(
+    new THREE.Mesh(
+      new THREE.SphereGeometry(EARTH_RADIUS * 1.06, 64, 64),
+      new THREE.ShaderMaterial({
+        vertexShader: ATMOS_VERT,
+        fragmentShader: ATMOS_FRAG,
+        uniforms: { sunDirection: { value: SUN_DIR } },
+        transparent: true,
+        depthWrite: false,
+        side: THREE.FrontSide,
+        blending: THREE.AdditiveBlending,
+      }),
+    ),
+  );
 
   // ── Soft glow halo ───────────────────────────────────────────────────────
-  const gc   = document.createElement('canvas');
-  gc.width   = gc.height = 256;
+  const gc = document.createElement('canvas');
+  gc.width = gc.height = 256;
   const gctx = gc.getContext('2d');
   const grad = gctx.createRadialGradient(128, 128, 40, 128, 128, 128);
-  grad.addColorStop(0,   'rgba(70,130,255,0.15)');
+  grad.addColorStop(0, 'rgba(70,130,255,0.15)');
   grad.addColorStop(0.5, 'rgba(50,100,220,0.06)');
-  grad.addColorStop(1,   'rgba(0,0,0,0)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
   gctx.fillStyle = grad;
   gctx.fillRect(0, 0, 256, 256);
   const glowSprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(gc),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }),
   );
   glowSprite.scale.set(EARTH_RADIUS * 2.8, EARTH_RADIUS * 2.8, 1);
   scene.add(glowSprite);
@@ -227,8 +246,8 @@ export function createScene(container) {
   // ── Orbital shells ───────────────────────────────────────────────────────
   [
     [1.063, 0x00ffff, 0.03],
-    [1.35,  0xffaa00, 0.02],
-    [1.65,  0xff44ff, 0.015],
+    [1.35, 0xffaa00, 0.02],
+    [1.65, 0xff44ff, 0.015],
   ].forEach(([r, color, opacity]) => {
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(r, 0.002, 8, 120),
@@ -239,18 +258,24 @@ export function createScene(container) {
   });
 
   // ── Lat/lon grid ─────────────────────────────────────────────────────────
-  const gridMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.04, transparent: true });
+  const gridMat = new THREE.LineBasicMaterial({
+    color: 0x00ffff,
+    opacity: 0.04,
+    transparent: true,
+  });
   for (let lat = -80; lat <= 80; lat += 20) {
     const pts = [];
     for (let lon = 0; lon <= 360; lon += 5) {
       const phi = ((90 - lat) * Math.PI) / 180;
-      const th  = (lon * Math.PI) / 180;
-      const r   = EARTH_RADIUS * 1.001;
-      pts.push(new THREE.Vector3(
-        r * Math.sin(phi) * Math.cos(th),
-        r * Math.cos(phi),
-        r * Math.sin(phi) * Math.sin(th),
-      ));
+      const th = (lon * Math.PI) / 180;
+      const r = EARTH_RADIUS * 1.001;
+      pts.push(
+        new THREE.Vector3(
+          r * Math.sin(phi) * Math.cos(th),
+          r * Math.cos(phi),
+          r * Math.sin(phi) * Math.sin(th),
+        ),
+      );
     }
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
   }

@@ -18,17 +18,17 @@ import { createDot } from './scene.js';
 // Satellites: clearly visible, type-differentiated.
 // Debris: smaller but still readable, more numerous.
 const SIZE = {
-  payload: 0.09,   // blue  — large, important satellites
-  rocket:  0.08,   // orange — rocket bodies
-  debris:  0.045,  // red   — existing catalogue debris (smaller)
-  cascade: 0.038,  // magenta — freshly spawned collision debris
+  payload: 0.09, // blue  — large, important satellites
+  rocket: 0.08, // orange — rocket bodies
+  debris: 0.045, // red   — existing catalogue debris (smaller)
+  cascade: 0.038, // magenta — freshly spawned collision debris
 };
 
 // coreFraction: how tight the bright core is (smaller = crisper dot)
 const CORE = {
-  payload: 0.20,
-  rocket:  0.20,
-  debris:  0.25,
+  payload: 0.2,
+  rocket: 0.2,
+  debris: 0.25,
   cascade: 0.25,
 };
 
@@ -52,19 +52,19 @@ export function buildSatellites(tleEntries, scene) {
     const type = entry.type || 'payload';
     const mesh = createDot(
       COLORS[type] || COLORS.payload,
-      SIZE[type]   || SIZE.payload,
-      CORE[type]   || CORE.payload,
+      SIZE[type] || SIZE.payload,
+      CORE[type] || CORE.payload,
     );
     mesh.position.set(entry.scenePos.x, entry.scenePos.y, entry.scenePos.z);
     scene.add(mesh);
 
     state.satellites.push({
-      name:   entry.name,
+      name: entry.name,
       satrec: entry.satrec,
       type,
-      desc:   entry.desc,
+      desc: entry.desc,
       mesh,
-      pos:    entry.pos,
+      pos: entry.pos,
     });
   }
 }
@@ -82,8 +82,8 @@ export function spawnDebrisCloud(origin, count, isCascade, scene) {
     );
     const mesh = createDot(
       isCascade ? COLORS.cascade : COLORS.debris,
-      isCascade ? SIZE.cascade   : SIZE.debris,
-      isCascade ? CORE.cascade   : CORE.debris,
+      isCascade ? SIZE.cascade : SIZE.debris,
+      isCascade ? CORE.cascade : CORE.debris,
     );
     const offset = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
       .normalize()
@@ -188,8 +188,8 @@ export function updateDebris(dt, scene, onCascade) {
 export function getStats() {
   return {
     totalSatellites: state.satellites.length,
-    totalDebris:     state.debrisFields.reduce((sum, d) => sum + d.frags.length, 0),
-    cascadeCount:    state.cascadeCount,
-    simTime:         state.simTime,
+    totalDebris: state.debrisFields.reduce((sum, d) => sum + d.frags.length, 0),
+    cascadeCount: state.cascadeCount,
+    simTime: state.simTime,
   };
 }
