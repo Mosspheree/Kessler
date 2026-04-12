@@ -13,6 +13,25 @@ import {
 } from './constants.js';
 import { createDot } from './scene.js';
 
+// ── Dot sizes (world-space sprite scale) ─────────────────────────────────────
+// Sprites are much larger than the old SphereGeometry meshes were.
+// Satellites: clearly visible, type-differentiated.
+// Debris: smaller but still readable, more numerous.
+const SIZE = {
+  payload: 0.09,   // blue  — large, important satellites
+  rocket:  0.08,   // orange — rocket bodies
+  debris:  0.045,  // red   — existing catalogue debris (smaller)
+  cascade: 0.038,  // magenta — freshly spawned collision debris
+};
+
+// coreFraction: how tight the bright core is (smaller = crisper dot)
+const CORE = {
+  payload: 0.20,
+  rocket:  0.20,
+  debris:  0.25,
+  cascade: 0.25,
+};
+
 // ── Simulation state ─────────────────────────────────────────────────────────
 export const state = {
   satellites: [],
@@ -24,27 +43,28 @@ export const state = {
 
 /**
  * Build satellite meshes from parsed TLE entries and add them to the scene.
- * Each entry: { name, satrec, type, desc, mesh, pos }
  */
 export function buildSatellites(tleEntries, scene) {
   state.satellites.forEach((s) => scene.remove(s.mesh));
   state.satellites = [];
 
   for (const entry of tleEntries) {
+    const type = entry.type || 'payload';
     const mesh = createDot(
-      COLORS[entry.type] || COLORS.payload,
-      entry.type === 'debris' ? 0.004 : 0.007,
+      COLORS[type] || COLORS.payload,
+      SIZE[type]   || SIZE.payload,
+      CORE[type]   || CORE.payload,
     );
     mesh.position.set(entry.scenePos.x, entry.scenePos.y, entry.scenePos.z);
     scene.add(mesh);
 
     state.satellites.push({
-      name: entry.name,
+      name:   entry.name,
       satrec: entry.satrec,
-      type: entry.type,
-      desc: entry.desc,
+      type,
+      desc:   entry.desc,
       mesh,
-      pos: entry.pos,
+      pos:    entry.pos,
     });
   }
 }
@@ -60,7 +80,11 @@ export function spawnDebrisCloud(origin, count, isCascade, scene) {
       (Math.random() - 0.5) * 0.003,
       (Math.random() - 0.5) * 0.003,
     );
-    const mesh = createDot(isCascade ? COLORS.cascade : COLORS.debris, 0.003);
+    const mesh = createDot(
+      isCascade ? COLORS.cascade : COLORS.debris,
+      isCascade ? SIZE.cascade   : SIZE.debris,
+      isCascade ? CORE.cascade   : CORE.debris,
+    );
     const offset = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
       .normalize()
       .multiplyScalar(0.02);
@@ -73,7 +97,6 @@ export function spawnDebrisCloud(origin, count, isCascade, scene) {
 
 /**
  * Trigger a collision between two satellites.
- * Returns { collisionPos, satA, satB } for the caller to animate.
  */
 export function triggerCollision(indexA, indexB, scene, camera) {
   if (indexA === indexB) return null;
@@ -84,12 +107,12 @@ export function triggerCollision(indexA, indexB, scene, camera) {
 
   const collisionPos = satA.mesh.position.clone();
 
-  // Flash effect
+  // Flash white
   satA.mesh.material.color.set(0xffffff);
   satB.mesh.position.copy(collisionPos);
   satB.mesh.material.color.set(0xffffff);
 
-  // Explosion ring animation
+  // Explosion ring
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(0.01, 0.003, 8, 32),
     new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 1 }),
@@ -109,7 +132,7 @@ export function triggerCollision(indexA, indexB, scene, camera) {
     }
   }, 30);
 
-  // Delayed destruction + debris spawn
+  // Destroy satellites + spawn debris after short delay
   setTimeout(() => {
     scene.remove(satA.mesh);
     scene.remove(satB.mesh);
@@ -124,7 +147,6 @@ export function triggerCollision(indexA, indexB, scene, camera) {
 
 /**
  * Advance the debris physics and check for secondary cascades.
- * Called once per frame while simulation is running.
  */
 export function updateDebris(dt, scene, onCascade) {
   state.simTime += dt;
@@ -132,21 +154,18 @@ export function updateDebris(dt, scene, onCascade) {
   state.debrisFields.forEach((field) => {
     field.age += dt;
 
-    // Update fragment positions with simplified gravity
     field.frags.forEach((f) => {
       const toCenter = f.pos.clone().negate().normalize();
       f.vel.addScaledVector(toCenter, GRAVITY_PULL);
       f.pos.addScaledVector(f.vel, 1);
       f.mesh.position.copy(f.pos);
 
-      // Bounce off Earth surface
       if (f.pos.length() < EARTH_RADIUS * 1.01) {
         f.pos.normalize().multiplyScalar(EARTH_RADIUS * 1.05);
         f.vel.reflect(f.pos.clone().normalize()).multiplyScalar(SURFACE_BOUNCE_FACTOR);
       }
     });
 
-    // Secondary cascade check
     if (field.age > CASCADE_CHECK_START && field.age < CASCADE_CHECK_END) {
       const leadFragment = field.frags[0]?.mesh.position || new THREE.Vector3();
       state.satellites.forEach((sat) => {
@@ -169,8 +188,8 @@ export function updateDebris(dt, scene, onCascade) {
 export function getStats() {
   return {
     totalSatellites: state.satellites.length,
-    totalDebris: state.debrisFields.reduce((sum, d) => sum + d.frags.length, 0),
-    cascadeCount: state.cascadeCount,
-    simTime: state.simTime,
+    totalDebris:     state.debrisFields.reduce((sum, d) => sum + d.frags.length, 0),
+    cascadeCount:    state.cascadeCount,
+    simTime:         state.simTime,
   };
 }
