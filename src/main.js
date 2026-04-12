@@ -91,7 +91,9 @@ const trailMap = new Map();
 
 function initTrails() {
   for (const sat of state.satellites) {
-    const points = Array(TRAIL_LENGTH).fill(null).map(() => sat.mesh.position.clone());
+    const points = Array(TRAIL_LENGTH)
+      .fill(null)
+      .map(() => sat.mesh.position.clone());
     const geo = new THREE.BufferGeometry().setFromPoints(points);
     const mat = new THREE.LineBasicMaterial({
       color: 0x0088aa,

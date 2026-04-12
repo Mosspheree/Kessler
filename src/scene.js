@@ -161,7 +161,6 @@ export function createSatelliteMesh(type, hexColor) {
     group.add(dish);
 
     group.add(makeGlow(hexColor, 0.08));
-
   } else if (type === 'rocket') {
     // Cylinder body
     const body = new THREE.Mesh(
@@ -193,7 +192,6 @@ export function createSatelliteMesh(type, hexColor) {
     group.add(nose);
 
     group.add(makeGlow(hexColor, 0.07));
-
   } else {
     // Debris / cascade — jagged irregular shard
     const size = type === 'cascade' ? 0.005 : 0.007;
@@ -221,11 +219,7 @@ export function createSatelliteMesh(type, hexColor) {
         flatShading: true,
       }),
     );
-    shard.rotation.set(
-      Math.random() * Math.PI,
-      Math.random() * Math.PI,
-      Math.random() * Math.PI,
-    );
+    shard.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
     group.add(shard);
     group.add(makeGlow(hexColor, type === 'cascade' ? 0.04 : 0.05));
   }

@@ -58,11 +58,7 @@ export function spawnDebrisCloud(origin, count, isCascade, scene) {
       (Math.random() - 0.5) * 0.003,
     );
     const mesh = createDot(isCascade ? COLORS.cascade : COLORS.debris);
-    const offset = new THREE.Vector3(
-      Math.random() - 0.5,
-      Math.random() - 0.5,
-      Math.random() - 0.5,
-    )
+    const offset = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
       .normalize()
       .multiplyScalar(0.02);
     mesh.position.copy(origin).add(offset);
