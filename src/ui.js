@@ -40,6 +40,9 @@ export function populateDropdowns(satellites) {
   });
   if (satellites.length > 1) el.selectB.selectedIndex = 1;
 }
+export function getSimSpeed() {
+  return el.speedSlider ? parseFloat(el.speedSlider.value) : 1;
+}
 
 /**
  * Update the statistics panel.
@@ -126,6 +129,7 @@ export function setLoadingText(msg) {
 export function onCollisionTriggered() {
   el.triggerBtn.disabled = true;
   el.instructions.style.display = 'none';
+  el.warning.style.display = 'none';
 }
 
 /**
@@ -134,4 +138,9 @@ export function onCollisionTriggered() {
 export function setupControls(onTrigger, onReset) {
   el.triggerBtn.addEventListener('click', onTrigger);
   el.resetBtn.addEventListener('click', onReset);
+  if (el.speedSlider) {
+    el.speedSlider.addEventListener('input', () => {
+      el.speedLabel.textContent = parseFloat(el.speedSlider.value).toFixed(1) + 'x';
+    });
+  }
 }
