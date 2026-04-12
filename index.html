@@ -22,6 +22,20 @@
         <div class="stat">Cascade events <span id="stat-cascades">0</span></div>
         <div class="stat">Simulation time <span id="stat-time">0s</span></div>
         <hr />
+        <div class="stat">
+            Sim speed&nbsp;
+            <span id="speed-label" style="color:#0ff">1.0x</span>
+          </div>
+          <input
+            id="speed-slider"
+            type="range"
+            min="0.1"
+            max="10"
+            step="0.1"
+            value="1"
+            style="width:100%;margin:4px 0 10px;accent-color:#0ff"
+            aria-label="Simulation speed"
+          />
         <label for="select-object-a">&#9656; SELECT OBJECT A (initiator)</label>
         <select id="select-object-a" aria-label="Select initiator object"></select>
         <label for="select-object-b">&#9656; SELECT OBJECT B (target)</label>
