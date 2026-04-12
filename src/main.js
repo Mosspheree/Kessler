@@ -96,7 +96,7 @@ let lastTime = performance.now();
 function animate() {
   requestAnimationFrame(animate);
   const now = performance.now();
-  const dt = (now - lastTime) / 1000;
+  const dt = ((now - lastTime) / 1000) * getSimSpeed();
   lastTime = now;
 
   controls.update();
