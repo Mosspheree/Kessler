@@ -17,6 +17,8 @@ const el = {
   tooltip: document.getElementById('tooltip'),
   instructions: document.getElementById('instructions'),
   warning: document.getElementById('warning'),
+  speedSlider: document.getElementById('speed-slider'),
+  speedLabel: document.getElementById('speed-label'),
 };
 
 /**
