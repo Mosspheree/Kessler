@@ -1,21 +1,17 @@
-MIT License
+PROPRIETARY LICENSE AND COPYRIGHT NOTICE
+Copyright © 2026 Mostafa Elshabasy. All rights reserved.
 
-Copyright (c) 2026 Mostafa Elshabasy
+1. OWNERSHIP AND EXCLUSIVITY
+This software and all associated files (the "Software") are the sole and exclusive property of Mostafa Elshabasy. All rights, title, and interest in and to the Software, including all intellectual property rights, are and shall remain with the author.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+2. RESTRICTIONS ON USE
+Permission is NOT granted to any person or entity to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software. The use of this Software for any commercial purpose, for-profit activity, or as a basis for other software products is strictly prohibited.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+3. LIMITED PERMISSION FOR VIEWING
+The Software is provided in a public repository for the sole purpose of portfolio review and personal, non-commercial educational inspection. Viewing the source code on this platform does not constitute a license to execute, deploy, or redistribute the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+4. PROHIBITION ON MACHINE LEARNING TRAINING
+Explicit permission is denied for this Software, including its datasets and logic, to be used as training data for artificial intelligence or machine learning models without a separate, written agreement signed by me.
+
+5. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
